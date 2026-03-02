@@ -24,12 +24,6 @@
             border-color: rgba(34, 211, 238, 0.4);
             box-shadow: 0 0 25px rgba(34, 211, 238, 0.05);
         }
-        .glow-cyan { box-shadow: 0 0 20px rgba(34, 211, 238, 0.1); }
-        .stat-value {
-            background: linear-gradient(to bottom right, #ffffff, #94a3b8);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
         @keyframes pulse-red {
             0%, 100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.4); }
             50% { box-shadow: 0 0 0 10px rgba(244, 63, 94, 0); }
@@ -37,6 +31,15 @@
         .attention-needed {
             animation: pulse-red 2s infinite;
             border-color: rgba(244, 63, 94, 0.5);
+        }
+        .loading-shimmer {
+            background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
         }
     </style>
 </head>
@@ -57,17 +60,16 @@
             <div class="flex items-center gap-4">
                 <div class="text-right hidden sm:block">
                     <p class="text-[10px] uppercase tracking-widest text-slate-500 font-bold">系統狀態</p>
-                    <p id="update-time" class="text-xs text-cyan-400/80 font-mono">同步中...</p>
+                    <p id="update-time" class="text-xs text-cyan-400/80 font-mono">載入中...</p>
                 </div>
-                <button onclick="refreshData()" class="group p-3 bg-slate-900 hover:bg-slate-800 rounded-xl transition-all border border-slate-800 hover:border-cyan-500/50">
-                    <i data-lucide="refresh-cw" class="w-5 h-5 group-active:rotate-180 transition-transform"></i>
+                <button onclick="refreshData()" id="refreshBtn" class="group p-3 bg-slate-900 hover:bg-slate-800 rounded-xl transition-all border border-slate-800 hover:border-cyan-500/50">
+                    <i data-lucide="refresh-cw" class="w-5 h-5 transition-transform"></i>
                 </button>
             </div>
         </header>
 
         <!-- Stats Overview -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <!-- Total -->
             <div class="tech-card p-6">
                 <div class="flex justify-between items-start mb-4">
                     <span class="text-slate-400 text-sm font-medium">總報名人數</span>
@@ -79,7 +81,6 @@
                 </div>
             </div>
 
-            <!-- Avg Efficacy -->
             <div class="tech-card p-6">
                 <div class="flex justify-between items-start mb-4">
                     <span class="text-slate-400 text-sm font-medium">平均效能感</span>
@@ -91,7 +92,6 @@
                 </div>
             </div>
 
-            <!-- Low Efficacy Alert -->
             <div id="alert-card" class="tech-card p-6 transition-all duration-500">
                 <div class="flex justify-between items-start mb-4">
                     <span class="text-slate-400 text-sm font-medium">需關懷學員</span>
@@ -104,29 +104,25 @@
                 <div class="mt-2 text-[10px] text-rose-500/80 font-medium">信心分數 < 12 分</div>
             </div>
 
-            <!-- System Info -->
             <div class="tech-card p-6 border-dashed border-slate-700 bg-transparent">
                 <div class="flex justify-between items-start mb-2">
-                    <span class="text-slate-500 text-xs font-bold uppercase tracking-widest">課程進度</span>
+                    <span class="text-slate-500 text-xs font-bold uppercase tracking-widest">系統診斷</span>
                 </div>
-                <div class="space-y-2 mt-4">
-                    <div class="w-full bg-slate-800 rounded-full h-1.5">
-                        <div class="bg-cyan-500 h-1.5 rounded-full" style="width: 45%"></div>
-                    </div>
-                    <p class="text-[10px] text-slate-500">報名階段 (已達成 45%)</p>
+                <div id="status-message" class="text-[10px] mt-2 leading-relaxed">
+                    正在嘗試連線至 Google Apps Script...
                 </div>
             </div>
         </div>
 
         <!-- Charts Section -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div id="charts-container" class="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <!-- Role Distribution -->
             <div class="tech-card p-8">
                 <div class="flex items-center gap-2 mb-8">
                     <i data-lucide="pie-chart" class="w-5 h-5 text-purple-400"></i>
                     <h3 class="text-lg font-bold text-white">學員職級分佈</h3>
                 </div>
-                <div class="h-64">
+                <div class="h-64 flex items-center justify-center" id="roleContainer">
                     <canvas id="roleChart"></canvas>
                 </div>
             </div>
@@ -137,7 +133,7 @@
                     <i data-lucide="bar-chart-3" class="w-5 h-5 text-blue-400"></i>
                     <h3 class="text-lg font-bold text-white">實作課時段人氣</h3>
                 </div>
-                <div class="h-64">
+                <div class="h-64" id="sessionContainer">
                     <canvas id="sessionChart"></canvas>
                 </div>
             </div>
@@ -148,13 +144,12 @@
                     <i data-lucide="target" class="w-5 h-5 text-emerald-400"></i>
                     <h3 class="text-lg font-bold text-white">學習動機交叉分析</h3>
                 </div>
-                <div class="h-80">
+                <div class="h-80" id="motivationContainer">
                     <canvas id="motivationChart"></canvas>
                 </div>
             </div>
         </div>
 
-        <!-- Footer Footer -->
         <footer class="text-center py-10">
             <p class="text-slate-600 text-xs tracking-widest uppercase">
                 &copy; 2026 高醫醫教中心 - Chest Echo 研究專案儀表板
@@ -165,43 +160,80 @@
     <script>
         let charts = {};
 
-        // 初始化圖表
         function initDashboard() {
             lucide.createIcons();
             refreshData();
         }
 
-        // 從後端 Code.gs 獲取資料
         function refreshData() {
-            const btnIcon = document.querySelector('button i');
-            btnIcon.classList.add('animate-spin');
+            const refreshBtn = document.getElementById('refreshBtn');
+            const btnIcon = refreshBtn ? (refreshBtn.querySelector('svg') || refreshBtn.querySelector('i')) : null;
+            const statusMsg = document.getElementById('status-message');
             
-            // 呼叫 GAS 後端的 getDashboardData 函數
-            google.script.run
-                .withSuccessHandler(data => {
-                    btnIcon.classList.remove('animate-spin');
-                    updateDashboardUI(data);
-                })
-                .withFailureHandler(err => {
-                    btnIcon.classList.remove('animate-spin');
-                    console.error("Dashboard Load Error:", err);
-                })
-                .getDashboardData();
+            if (btnIcon) btnIcon.classList.add('animate-spin');
+            statusMsg.innerText = "正在嘗試抓取最新數據...";
+            statusMsg.className = "text-[10px] text-cyan-500 animate-pulse";
+            
+            // 偵測環境
+            const isGoogleEnv = (typeof google !== 'undefined' && google.script && google.script.run);
+
+            if (isGoogleEnv) {
+                google.script.run
+                    .withSuccessHandler(data => {
+                        if (btnIcon) btnIcon.classList.remove('animate-spin');
+                        if (data.error) {
+                            handleError(data.error);
+                        } else {
+                            statusMsg.innerText = "數據同步成功（Google 模式）。";
+                            statusMsg.className = "text-[10px] text-emerald-500";
+                            updateDashboardUI(data);
+                        }
+                    })
+                    .withFailureHandler(err => {
+                        if (btnIcon) btnIcon.classList.remove('animate-spin');
+                        handleError(err);
+                    })
+                    .getDashboardData();
+            } else {
+                // 模擬數據模式
+                console.warn("未偵測到 Google Apps Script 環境，開啟模擬數據預覽模式。");
+                setTimeout(() => {
+                    if (btnIcon) btnIcon.classList.remove('animate-spin');
+                    statusMsg.innerText = "模擬數據預覽模式（本地測試中）。";
+                    statusMsg.className = "text-[10px] text-amber-500";
+                    
+                    const mockData = {
+                        totalRegistered: 12,
+                        avgEffScore: 14.5,
+                        lowEffCount: 3,
+                        lastUpdate: new Date().toLocaleTimeString(),
+                        roleCounts: { "PGY1": 4, "PGY2": 3, "R1": 2, "R2": 2, "Fellow": 1 },
+                        motivationCounts: { "提升臨床判斷": 10, "為值班準備": 8, "純粹興趣": 3, "應付考試": 2 },
+                        sessionCounts: { "3/11": 4, "3/12": 2, "3/18": 4, "3/19": 1, "3/25": 3, "3/26": 0 }
+                    };
+                    updateDashboardUI(mockData);
+                }, 1000);
+            }
+        }
+
+        function handleError(error) {
+            console.error("Dashboard Error:", error);
+            const statusMsg = document.getElementById('status-message');
+            statusMsg.innerText = "錯誤: " + (error.message || error);
+            statusMsg.className = "text-[10px] text-rose-500 font-bold";
+            
+            // 只有在真的是 Google 環境出錯時才跳 alert
+            if (typeof google !== 'undefined') {
+                alert("儀表板載入失敗：\n1. 請確認試算表頁籤名稱為『0302』\n2. 請確認已在 Apps Script 點擊『部署』並設定為『所有人』存取。");
+            }
         }
 
         function updateDashboardUI(data) {
-            if (data.error) {
-                alert(data.error);
-                return;
-            }
+            document.getElementById('stat-total').innerText = data.totalRegistered || 0;
+            document.getElementById('stat-avg-eff').innerText = data.avgEffScore || 0;
+            document.getElementById('stat-low-eff').innerText = data.lowEffCount || 0;
+            document.getElementById('update-time').innerText = `已同步: ${data.lastUpdate || '剛剛'}`;
 
-            // 更新統計數值
-            document.getElementById('stat-total').innerText = data.totalRegistered;
-            document.getElementById('stat-avg-eff').innerText = data.avgEffScore;
-            document.getElementById('stat-low-eff').innerText = data.lowEffCount;
-            document.getElementById('update-time').innerText = `已同步: ${data.lastUpdate}`;
-
-            // 關懷標記邏輯
             const alertCard = document.getElementById('alert-card');
             if (data.lowEffCount > 0) {
                 alertCard.classList.add('attention-needed');
@@ -209,20 +241,22 @@
                 alertCard.classList.remove('attention-needed');
             }
 
-            // 渲染圖表
-            renderRoleChart(data.roleCounts);
-            renderSessionChart(data.sessionCounts);
-            renderMotivationChart(data.motivationCounts);
+            if (data.totalRegistered >= 0) {
+                renderRoleChart(data.roleCounts || {});
+                renderSessionChart(data.sessionCounts || {});
+                renderMotivationChart(data.motivationCounts || {});
+            }
         }
 
         function renderRoleChart(counts) {
             const ctx = document.getElementById('roleChart').getContext('2d');
             if(charts.role) charts.role.destroy();
             
+            const labels = Object.keys(counts);
             charts.role = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
-                    labels: Object.keys(counts),
+                    labels: labels,
                     datasets: [{
                         data: Object.values(counts),
                         backgroundColor: ['#22d3ee', '#3b82f6', '#818cf8', '#a855f7', '#ec4899', '#f43f5e', '#fbbf24'],
@@ -235,7 +269,7 @@
                     maintainAspectRatio: false,
                     cutout: '70%',
                     plugins: {
-                        legend: { position: 'right', labels: { color: '#94a3b8', padding: 20, font: { size: 12 } } }
+                        legend: { position: 'right', labels: { color: '#94a3b8', padding: 10, font: { size: 11 } } }
                     }
                 }
             });
@@ -246,7 +280,6 @@
             if(charts.session) charts.session.destroy();
             
             const sortedKeys = Object.keys(counts).sort();
-            
             charts.session = new Chart(ctx, {
                 type: 'bar',
                 data: {
@@ -264,7 +297,7 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     scales: {
-                        y: { beginAtZero: true, grid: { color: 'rgba(51, 65, 85, 0.5)' }, ticks: { color: '#64748b' } },
+                        y: { beginAtZero: true, grid: { color: 'rgba(51, 65, 85, 0.5)' }, ticks: { color: '#64748b', stepSize: 1 } },
                         x: { grid: { display: false }, ticks: { color: '#64748b' } }
                     },
                     plugins: { legend: { display: false } }
@@ -277,14 +310,12 @@
             if(charts.motivation) charts.motivation.destroy();
             
             const labels = Object.keys(counts);
-            const values = Object.values(counts);
-
             charts.motivation = new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: labels,
                     datasets: [{
-                        data: values,
+                        data: Object.values(counts),
                         backgroundColor: 'rgba(16, 185, 129, 0.3)',
                         borderColor: '#10b981',
                         borderWidth: 1.5,
@@ -296,7 +327,7 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     scales: {
-                        x: { beginAtZero: true, grid: { color: 'rgba(51, 65, 85, 0.3)' }, ticks: { color: '#64748b' } },
+                        x: { beginAtZero: true, grid: { color: 'rgba(51, 65, 85, 0.3)' }, ticks: { color: '#64748b', stepSize: 1 } },
                         y: { grid: { display: false }, ticks: { color: '#94a3b8' } }
                     },
                     plugins: { legend: { display: false } }
