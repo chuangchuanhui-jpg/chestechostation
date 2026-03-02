@@ -33,9 +33,6 @@
             border-color: rgba(244, 63, 94, 0.5);
             background: rgba(244, 63, 94, 0.05);
         }
-        .animate-spin-slow {
-            animation: spin 3s linear infinite;
-        }
     </style>
 </head>
 <body class="p-4 md:p-8 antialiased">
@@ -67,6 +64,7 @@
 
         <!-- Stats Overview -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <!-- 總人數 -->
             <div class="tech-card p-6">
                 <div class="flex justify-between items-start mb-4">
                     <span class="text-slate-400 text-sm font-medium">總報名人數</span>
@@ -78,6 +76,7 @@
                 </div>
             </div>
 
+            <!-- 平均效能 -->
             <div class="tech-card p-6">
                 <div class="flex justify-between items-start mb-4">
                     <span class="text-slate-400 text-sm font-medium">平均效能感</span>
@@ -87,8 +86,10 @@
                     <span id="stat-avg-eff" class="text-4xl font-bold text-white">--</span>
                     <span class="text-slate-500 text-sm">/ 20</span>
                 </div>
+                <div id="eff-warning" class="text-[9px] text-amber-500 mt-2 hidden">⚠️ 欄位名稱不符，改用手動加總計算中</div>
             </div>
 
+            <!-- 需關懷學員 -->
             <div id="alert-card" class="tech-card p-6 transition-all duration-500">
                 <div class="flex justify-between items-start mb-4">
                     <span class="text-slate-400 text-sm font-medium">需關懷學員</span>
@@ -98,22 +99,22 @@
                     <span id="stat-low-eff" class="text-4xl font-bold text-white">--</span>
                     <span class="text-slate-500 text-sm">名</span>
                 </div>
-                <div class="mt-2 text-[10px] text-rose-500/80 font-medium tracking-wide">效能感總分 < 12 (信心較弱)</div>
+                <div class="mt-2 text-[10px] text-rose-500/80 font-medium tracking-wide">效能感總分 < 12</div>
             </div>
 
+            <!-- 診斷訊息 -->
             <div class="tech-card p-6 border-dashed border-slate-700 bg-transparent flex flex-col justify-center">
                 <div class="flex justify-between items-start mb-2">
-                    <span class="text-slate-500 text-xs font-bold uppercase tracking-widest">數據來源</span>
+                    <span class="text-slate-500 text-xs font-bold uppercase tracking-widest">數據診斷</span>
                 </div>
                 <div id="status-message" class="text-[10px] text-slate-500 mt-1 leading-relaxed">
-                    等待連線至試算表...
+                    等待連線至雲端資料庫...
                 </div>
             </div>
         </div>
 
         <!-- Charts Section -->
         <div id="charts-container" class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <!-- Role -->
             <div class="tech-card p-8">
                 <div class="flex items-center gap-2 mb-8">
                     <i data-lucide="pie-chart" class="w-5 h-5 text-purple-400"></i>
@@ -123,8 +124,6 @@
                     <canvas id="roleChart"></canvas>
                 </div>
             </div>
-
-            <!-- Session -->
             <div class="tech-card p-8">
                 <div class="flex items-center gap-2 mb-8">
                     <i data-lucide="bar-chart-3" class="w-5 h-5 text-blue-400"></i>
@@ -134,12 +133,10 @@
                     <canvas id="sessionChart"></canvas>
                 </div>
             </div>
-
-            <!-- Motivation -->
             <div class="tech-card p-8 lg:col-span-2">
                 <div class="flex items-center gap-2 mb-8">
                     <i data-lucide="target" class="w-5 h-5 text-emerald-400"></i>
-                    <h3 class="text-lg font-bold text-white">學習動機分析</h3>
+                    <h3 class="text-lg font-bold text-white">學習動機交叉分析</h3>
                 </div>
                 <div class="h-80">
                     <canvas id="motivationChart"></canvas>
@@ -148,15 +145,12 @@
         </div>
 
         <footer class="text-center py-12">
-            <p class="text-slate-600 text-[10px] tracking-[0.2em] uppercase">
-                高醫醫教中心 &copy; Chest Echo 研究計畫即時數據系統
-            </p>
+            <p class="text-slate-600 text-[10px] tracking-[0.2em] uppercase">高醫醫教中心 &copy; Chest Echo 研究數據儀表板</p>
         </footer>
     </div>
 
     <script>
         let charts = {};
-        // 🚀 此處自動抓取您最新的 GAS 部署網址
         const scriptURL = 'https://script.google.com/macros/s/AKfycbw-GYPBBKj0Focm6iKISIGB_AA-e77yL3kgmzX-J9tNscjBLXQMiVFvdUpFN7rGW8ORhA/exec';
 
         function initDashboard() {
@@ -164,51 +158,40 @@
             refreshData();
         }
 
-        /**
-         * 獲取資料的核心函數
-         * 支援 Google Script 內部呼叫與 GitHub/外部透過 JSONP 呼叫
-         */
         function refreshData() {
             const iconContainer = document.getElementById('refreshIconContainer');
             const statusMsg = document.getElementById('status-message');
             
-            // 視覺動畫
             iconContainer.innerHTML = '<i data-lucide="refresh-cw" class="w-5 h-5 animate-spin"></i>';
             lucide.createIcons();
             
-            statusMsg.innerText = "正在同步雲端數據...";
+            statusMsg.innerText = "正在連線並抓取 0302 數據...";
             statusMsg.className = "text-[10px] text-cyan-500 animate-pulse";
             
-            const isGoogleEnv = (typeof google !== 'undefined' && google.script && google.script.run);
+            // JSONP 請求處理
+            const callbackName = 'jsonp_cb_' + Math.round(100000 * Math.random());
+            window[callbackName] = function(data) {
+                iconContainer.innerHTML = '<i data-lucide="refresh-cw" class="w-5 h-5"></i>';
+                lucide.createIcons();
+                handleDataResponse(data);
+                delete window[callbackName];
+                document.body.removeChild(script);
+            };
 
-            if (isGoogleEnv) {
-                // 模式 A: 如果在 Google 內部 (如部署的網頁應用程式)
-                google.script.run
-                    .withSuccessHandler(data => handleDataSuccess(data, iconContainer))
-                    .withFailureHandler(err => handleDataError(err, iconContainer))
-                    .getDashboardData();
-            } else {
-                // 模式 B: 如果在外部 (如 GitHub Pages)，使用 JSONP 避開 CORS 限制
-                const callbackName = 'jsonp_cb_' + Math.round(100000 * Math.random());
-                
-                window[callbackName] = function(data) {
-                    handleDataSuccess(data, iconContainer);
-                    delete window[callbackName];
-                    document.body.removeChild(script);
-                };
-
-                const script = document.createElement('script');
-                script.src = `${scriptURL}?action=getData&callback=${callbackName}`;
-                script.onerror = () => handleDataError(new Error("連線超時或權限不足"), iconContainer);
-                document.body.appendChild(script);
-            }
+            const script = document.createElement('script');
+            script.src = `${scriptURL}?action=getData&callback=${callbackName}`;
+            script.onerror = () => {
+                iconContainer.innerHTML = '<i data-lucide="refresh-cw" class="w-5 h-5"></i>';
+                lucide.createIcons();
+                statusMsg.innerText = "連線失敗，請檢查 GAS 部署權限。";
+                statusMsg.className = "text-[10px] text-rose-500 font-bold";
+            };
+            document.body.appendChild(script);
         }
 
-        function handleDataSuccess(data, iconContainer) {
-            iconContainer.innerHTML = '<i data-lucide="refresh-cw" class="w-5 h-5"></i>';
-            lucide.createIcons();
-            
+        function handleDataResponse(data) {
             const statusMsg = document.getElementById('status-message');
+            const warningMsg = document.getElementById('eff-warning');
             
             if (data.error) {
                 statusMsg.innerText = "錯誤: " + data.error;
@@ -216,40 +199,32 @@
                 return;
             }
 
-            statusMsg.innerText = "數據已成功從 0302 頁籤載入。";
-            statusMsg.className = "text-[10px] text-emerald-500";
-            updateUI(data);
-        }
+            // 修正點：如果後端回傳的分數是 0.0，但實際上總人數 > 0，則顯示警告
+            if (data.totalRegistered > 0 && parseFloat(data.avgEffScore) === 0) {
+                warningMsg.classList.remove('hidden');
+                statusMsg.innerText = "警告：無法偵測到總分欄位，請檢查試算表標頭。";
+            } else {
+                warningMsg.classList.add('hidden');
+                statusMsg.innerText = "數據同步完成。";
+            }
 
-        function handleDataError(err, iconContainer) {
-            iconContainer.innerHTML = '<i data-lucide="refresh-cw" class="w-5 h-5"></i>';
-            lucide.createIcons();
-            
-            const statusMsg = document.getElementById('status-message');
-            statusMsg.innerText = "連線失敗，請檢查網路或 GAS 權限。";
-            statusMsg.className = "text-[10px] text-rose-500 font-bold";
-            console.error(err);
+            updateUI(data);
         }
 
         function updateUI(data) {
             document.getElementById('stat-total').innerText = data.totalRegistered || 0;
-            document.getElementById('stat-avg-eff').innerText = data.avgEffScore || 0;
+            document.getElementById('stat-avg-eff').innerText = data.avgEffScore || "0.0";
             document.getElementById('stat-low-eff').innerText = data.lowEffCount || 0;
             document.getElementById('update-time').innerText = `已同步: ${data.lastUpdate || '--'}`;
 
-            // 關懷標記邏輯
             const alertCard = document.getElementById('alert-card');
-            if (data.lowEffCount > 0) {
-                alertCard.classList.add('attention-needed');
-            } else {
-                alertCard.classList.remove('attention-needed');
-            }
+            if (data.lowEffCount > 0) alertCard.classList.add('attention-needed');
+            else alertCard.classList.remove('attention-needed');
 
-            // 渲染圖表
-            if (data.totalRegistered > 0) {
-                renderRoleChart(data.roleCounts);
-                renderSessionChart(data.sessionCounts);
-                renderMotivationChart(data.motivationCounts);
+            if (data.totalRegistered >= 0) {
+                renderRoleChart(data.roleCounts || {});
+                renderSessionChart(data.sessionCounts || {});
+                renderMotivationChart(data.motivationCounts || {});
             }
         }
 
@@ -263,18 +238,10 @@
                     datasets: [{
                         data: Object.values(counts),
                         backgroundColor: ['#22d3ee', '#3b82f6', '#818cf8', '#a855f7', '#ec4899', '#f43f5e', '#fbbf24'],
-                        borderWidth: 0,
-                        hoverOffset: 15
+                        borderWidth: 0
                     }]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    cutout: '70%',
-                    plugins: {
-                        legend: { position: 'right', labels: { color: '#94a3b8', padding: 10, font: { size: 11 } } }
-                    }
-                }
+                options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'right', labels: { color: '#94a3b8', font: { size: 10 } } } } }
             });
         }
 
@@ -286,24 +253,9 @@
                 type: 'bar',
                 data: {
                     labels: sortedKeys,
-                    datasets: [{
-                        label: '報名人數',
-                        data: sortedKeys.map(k => counts[k]),
-                        backgroundColor: 'rgba(59, 130, 246, 0.4)',
-                        borderColor: '#3b82f6',
-                        borderWidth: 1.5,
-                        borderRadius: 8
-                    }]
+                    datasets: [{ label: '人數', data: sortedKeys.map(k => counts[k]), backgroundColor: 'rgba(59, 130, 246, 0.4)', borderColor: '#3b82f6', borderWidth: 1, borderRadius: 8 }]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: { beginAtZero: true, grid: { color: 'rgba(51, 65, 85, 0.5)' }, ticks: { color: '#64748b', stepSize: 1 } },
-                        x: { grid: { display: false }, ticks: { color: '#64748b' } }
-                    },
-                    plugins: { legend: { display: false } }
-                }
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { color: '#64748b', stepSize: 1 } }, x: { ticks: { color: '#64748b' } } }, plugins: { legend: { display: false } } }
             });
         }
 
@@ -314,24 +266,9 @@
                 type: 'bar',
                 data: {
                     labels: Object.keys(counts),
-                    datasets: [{
-                        data: Object.values(counts),
-                        backgroundColor: 'rgba(16, 185, 129, 0.3)',
-                        borderColor: '#10b981',
-                        borderWidth: 1.5,
-                        borderRadius: 5
-                    }]
+                    datasets: [{ data: Object.values(counts), backgroundColor: 'rgba(16, 185, 129, 0.3)', borderColor: '#10b981', borderWidth: 1, borderRadius: 5 }]
                 },
-                options: {
-                    indexAxis: 'y',
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: { beginAtZero: true, grid: { color: 'rgba(51, 65, 85, 0.3)' }, ticks: { color: '#64748b', stepSize: 1 } },
-                        y: { grid: { display: false }, ticks: { color: '#94a3b8' } }
-                    },
-                    plugins: { legend: { display: false } }
-                }
+                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, scales: { x: { beginAtZero: true, ticks: { color: '#64748b', stepSize: 1 } }, y: { ticks: { color: '#94a3b8' } } }, plugins: { legend: { display: false } } }
             });
         }
 
