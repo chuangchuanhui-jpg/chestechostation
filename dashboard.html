@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>Chest Echo 課程即時儀表板</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { 
+            font-family: 'Inter', "Microsoft JhengHei", sans-serif; 
+            background-color: #020617; 
+            color: #cbd5e1; 
+        }
+        .tech-card { 
+            background: rgba(15, 23, 42, 0.8); 
+            border: 1px solid rgba(30, 41, 59, 1); 
+            border-radius: 1.25rem; 
+            position: relative; 
+            transition: all 0.3s ease;
+        }
+        .tech-card:hover {
+            border-color: rgba(34, 211, 238, 0.4);
+            box-shadow: 0 0 25px rgba(34, 211, 238, 0.05);
+        }
+        .glow-cyan { box-shadow: 0 0 20px rgba(34, 211, 238, 0.1); }
+        .stat-value {
+            background: linear-gradient(to bottom right, #ffffff, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        @keyframes pulse-red {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.4); }
+            50% { box-shadow: 0 0 0 10px rgba(244, 63, 94, 0); }
+        }
+        .attention-needed {
+            animation: pulse-red 2s infinite;
+            border-color: rgba(244, 63, 94, 0.5);
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8 antialiased">
+
+    <div class="max-w-7xl mx-auto space-y-8">
+        <!-- Header -->
+        <header class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div class="space-y-1">
+                <div class="flex items-center gap-3">
+                    <div class="p-2 bg-cyan-500/10 rounded-lg">
+                        <i data-lucide="activity" class="text-cyan-400 w-6 h-6"></i>
+                    </div>
+                    <h1 class="text-3xl font-bold text-white tracking-tight">Chest Echo 數據儀表板</h1>
+                </div>
+                <p class="text-slate-400 text-sm ml-11">即時監測報名狀態與學員效能感分析</p>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="text-right hidden sm:block">
+                    <p class="text-[10px] uppercase tracking-widest text-slate-500 font-bold">系統狀態</p>
+                    <p id="update-time" class="text-xs text-cyan-400/80 font-mono">同步中...</p>
+                </div>
+                <button onclick="refreshData()" class="group p-3 bg-slate-900 hover:bg-slate-800 rounded-xl transition-all border border-slate-800 hover:border-cyan-500/50">
+                    <i data-lucide="refresh-cw" class="w-5 h-5 group-active:rotate-180 transition-transform"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Stats Overview -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <!-- Total -->
+            <div class="tech-card p-6">
+                <div class="flex justify-between items-start mb-4">
+                    <span class="text-slate-400 text-sm font-medium">總報名人數</span>
+                    <i data-lucide="users" class="text-cyan-400 w-5 h-5"></i>
+                </div>
+                <div class="flex items-baseline gap-2">
+                    <span id="stat-total" class="text-4xl font-bold text-white">--</span>
+                    <span class="text-slate-500 text-sm">人</span>
+                </div>
+            </div>
+
+            <!-- Avg Efficacy -->
+            <div class="tech-card p-6">
+                <div class="flex justify-between items-start mb-4">
+                    <span class="text-slate-400 text-sm font-medium">平均效能感</span>
+                    <i data-lucide="brain" class="text-blue-400 w-5 h-5"></i>
+                </div>
+                <div class="flex items-baseline gap-2">
+                    <span id="stat-avg-eff" class="text-4xl font-bold text-white">--</span>
+                    <span class="text-slate-500 text-sm">/ 20</span>
+                </div>
+            </div>
+
+            <!-- Low Efficacy Alert -->
+            <div id="alert-card" class="tech-card p-6 transition-all duration-500">
+                <div class="flex justify-between items-start mb-4">
+                    <span class="text-slate-400 text-sm font-medium">需關懷學員</span>
+                    <i data-lucide="heart" class="text-rose-400 w-5 h-5"></i>
+                </div>
+                <div class="flex items-baseline gap-2">
+                    <span id="stat-low-eff" class="text-4xl font-bold text-white">--</span>
+                    <span class="text-slate-500 text-sm">名</span>
+                </div>
+                <div class="mt-2 text-[10px] text-rose-500/80 font-medium">信心分數 < 12 分</div>
+            </div>
+
+            <!-- System Info -->
+            <div class="tech-card p-6 border-dashed border-slate-700 bg-transparent">
+                <div class="flex justify-between items-start mb-2">
+                    <span class="text-slate-500 text-xs font-bold uppercase tracking-widest">課程進度</span>
+                </div>
+                <div class="space-y-2 mt-4">
+                    <div class="w-full bg-slate-800 rounded-full h-1.5">
+                        <div class="bg-cyan-500 h-1.5 rounded-full" style="width: 45%"></div>
+                    </div>
+                    <p class="text-[10px] text-slate-500">報名階段 (已達成 45%)</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Role Distribution -->
+            <div class="tech-card p-8">
+                <div class="flex items-center gap-2 mb-8">
+                    <i data-lucide="pie-chart" class="w-5 h-5 text-purple-400"></i>
+                    <h3 class="text-lg font-bold text-white">學員職級分佈</h3>
+                </div>
+                <div class="h-64">
+                    <canvas id="roleChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Session Popularity -->
+            <div class="tech-card p-8">
+                <div class="flex items-center gap-2 mb-8">
+                    <i data-lucide="bar-chart-3" class="w-5 h-5 text-blue-400"></i>
+                    <h3 class="text-lg font-bold text-white">實作課時段人氣</h3>
+                </div>
+                <div class="h-64">
+                    <canvas id="sessionChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Motivation Analysis -->
+            <div class="tech-card p-8 lg:col-span-2">
+                <div class="flex items-center gap-2 mb-8">
+                    <i data-lucide="target" class="w-5 h-5 text-emerald-400"></i>
+                    <h3 class="text-lg font-bold text-white">學習動機交叉分析</h3>
+                </div>
+                <div class="h-80">
+                    <canvas id="motivationChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer Footer -->
+        <footer class="text-center py-10">
+            <p class="text-slate-600 text-xs tracking-widest uppercase">
+                &copy; 2026 高醫醫教中心 - Chest Echo 研究專案儀表板
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        let charts = {};
+
+        // 初始化圖表
+        function initDashboard() {
+            lucide.createIcons();
+            refreshData();
+        }
+
+        // 從後端 Code.gs 獲取資料
+        function refreshData() {
+            const btnIcon = document.querySelector('button i');
+            btnIcon.classList.add('animate-spin');
+            
+            // 呼叫 GAS 後端的 getDashboardData 函數
+            google.script.run
+                .withSuccessHandler(data => {
+                    btnIcon.classList.remove('animate-spin');
+                    updateDashboardUI(data);
+                })
+                .withFailureHandler(err => {
+                    btnIcon.classList.remove('animate-spin');
+                    console.error("Dashboard Load Error:", err);
+                })
+                .getDashboardData();
+        }
+
+        function updateDashboardUI(data) {
+            if (data.error) {
+                alert(data.error);
+                return;
+            }
+
+            // 更新統計數值
+            document.getElementById('stat-total').innerText = data.totalRegistered;
+            document.getElementById('stat-avg-eff').innerText = data.avgEffScore;
+            document.getElementById('stat-low-eff').innerText = data.lowEffCount;
+            document.getElementById('update-time').innerText = `已同步: ${data.lastUpdate}`;
+
+            // 關懷標記邏輯
+            const alertCard = document.getElementById('alert-card');
+            if (data.lowEffCount > 0) {
+                alertCard.classList.add('attention-needed');
+            } else {
+                alertCard.classList.remove('attention-needed');
+            }
+
+            // 渲染圖表
+            renderRoleChart(data.roleCounts);
+            renderSessionChart(data.sessionCounts);
+            renderMotivationChart(data.motivationCounts);
+        }
+
+        function renderRoleChart(counts) {
+            const ctx = document.getElementById('roleChart').getContext('2d');
+            if(charts.role) charts.role.destroy();
+            
+            charts.role = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(counts),
+                    datasets: [{
+                        data: Object.values(counts),
+                        backgroundColor: ['#22d3ee', '#3b82f6', '#818cf8', '#a855f7', '#ec4899', '#f43f5e', '#fbbf24'],
+                        borderWidth: 0,
+                        hoverOffset: 15
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '70%',
+                    plugins: {
+                        legend: { position: 'right', labels: { color: '#94a3b8', padding: 20, font: { size: 12 } } }
+                    }
+                }
+            });
+        }
+
+        function renderSessionChart(counts) {
+            const ctx = document.getElementById('sessionChart').getContext('2d');
+            if(charts.session) charts.session.destroy();
+            
+            const sortedKeys = Object.keys(counts).sort();
+            
+            charts.session = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: sortedKeys,
+                    datasets: [{
+                        label: '報名人數',
+                        data: sortedKeys.map(k => counts[k]),
+                        backgroundColor: 'rgba(59, 130, 246, 0.4)',
+                        borderColor: '#3b82f6',
+                        borderWidth: 1.5,
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: 'rgba(51, 65, 85, 0.5)' }, ticks: { color: '#64748b' } },
+                        x: { grid: { display: false }, ticks: { color: '#64748b' } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        function renderMotivationChart(counts) {
+            const ctx = document.getElementById('motivationChart').getContext('2d');
+            if(charts.motivation) charts.motivation.destroy();
+            
+            const labels = Object.keys(counts);
+            const values = Object.values(counts);
+
+            charts.motivation = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: values,
+                        backgroundColor: 'rgba(16, 185, 129, 0.3)',
+                        borderColor: '#10b981',
+                        borderWidth: 1.5,
+                        borderRadius: 5
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { beginAtZero: true, grid: { color: 'rgba(51, 65, 85, 0.3)' }, ticks: { color: '#64748b' } },
+                        y: { grid: { display: false }, ticks: { color: '#94a3b8' } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        window.onload = initDashboard;
+    </script>
+</body>
+</html>
