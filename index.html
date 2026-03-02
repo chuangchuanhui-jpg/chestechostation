@@ -31,16 +31,17 @@
         .section-c::before { background-color: #a855f7; } /* purple-500 */
         .section-d::before { background-color: #10b981; } /* emerald-500 */
 
-        input[type="radio"]:checked + div,
-        input[type="checkbox"]:checked + div {
-            border-color: currentColor;
-            background-color: rgba(var(--tw-color-opacity), 0.1);
-        }
-
         .custom-radio:checked + label {
             background-color: #a855f7;
             color: white;
             box-shadow: 0 0 12px rgba(168, 85, 247, 0.5);
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .animate-spin {
+            animation: spin 1s linear infinite;
         }
     </style>
 </head>
@@ -48,19 +49,21 @@
 
     <div id="main-container" class="max-w-4xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
         <!-- Header -->
-        <header class="text-center mb-16 space-y-4">
+        <header id="page-header" class="text-center mb-16 space-y-4">
             <div class="inline-flex items-center justify-center p-4 bg-cyan-500/10 rounded-2xl border border-cyan-500/20 shadow-[0_0_20px_rgba(34,211,238,0.2)]">
                 <i data-lucide="stethoscope" class="w-10 h-10 text-cyan-400"></i>
             </div>
             <h1 class="text-3xl md:text-5xl font-bold text-white tracking-tight">Chest Echo 臨床實戰課程</h1>
             <p class="text-cyan-400/80 text-xl font-medium">報名與課前能力調查</p>
             <div class="max-w-2xl mx-auto text-sm text-slate-400 mt-6 leading-relaxed bg-slate-900/50 p-5 rounded-xl border border-slate-800">
-                本課程旨在提升住院醫師臨床使用胸腔超音波的能力。您的回饋將幫助我們打造更符合臨床需求的實作培訓，回應住院醫師對超音波課程不足的期待。
+                本課程旨在提升住院醫師臨床使用胸腔超音波的能力。您的回饋將幫助我們打造更符合臨床需求的實作培訓。
             </div>
         </header>
 
         <!-- Form Start -->
         <form id="echoForm" class="space-y-10">
+            <!-- 隱藏的標籤設定，確保 GAS 正確識別工作表 -->
+            <input type="hidden" name="sheetName" value="0302">
             
             <!-- Section A: 基本資料 -->
             <section class="tech-card section-a rounded-2xl p-6 md:p-8 shadow-xl">
@@ -72,15 +75,15 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
                     <div class="space-y-2">
                         <label class="block text-sm font-medium text-slate-400">1. 您的名字是？</label>
-                        <input required type="text" name="name" class="w-full bg-slate-950 border border-slate-800 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 rounded-lg p-3 text-white transition-all outline-none" placeholder="輸入姓名">
+                        <input required type="text" name="姓名" class="w-full bg-slate-950 border border-slate-800 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 rounded-lg p-3 text-white transition-all outline-none" placeholder="輸入姓名">
                     </div>
                     <div class="space-y-2">
                         <label class="block text-sm font-medium text-slate-400">2. 人事號？</label>
-                        <input required type="text" name="empId" class="w-full bg-slate-950 border border-slate-800 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 rounded-lg p-3 text-white transition-all outline-none" placeholder="輸入人事號">
+                        <input required type="text" name="人事號" class="w-full bg-slate-950 border border-slate-800 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 rounded-lg p-3 text-white transition-all outline-none" placeholder="輸入人事號">
                     </div>
                     <div class="space-y-2">
                         <label class="block text-sm font-medium text-slate-400">3. 您目前的身分是？</label>
-                        <select required name="role" class="w-full bg-slate-950 border border-slate-800 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 rounded-lg p-3 text-white outline-none">
+                        <select required name="職級身分" class="w-full bg-slate-950 border border-slate-800 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 rounded-lg p-3 text-white outline-none">
                             <option value="" disabled selected>請選擇身分</option>
                             <option>PGY1</option>
                             <option>PGY2（內科組）</option>
@@ -92,8 +95,8 @@
                         </select>
                     </div>
                     <div class="space-y-2">
-                        <label class="block text-sm font-medium text-slate-400">4. 過去是否接受過正式訓練？</label>
-                        <select required name="training" class="w-full bg-slate-950 border border-slate-800 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 rounded-lg p-3 text-white outline-none">
+                        <label class="block text-sm font-medium text-slate-400">4. 過去是否接受過訓練？</label>
+                        <select required name="過去正式超音波訓練次數" class="w-full bg-slate-950 border border-slate-800 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 rounded-lg p-3 text-white outline-none">
                             <option value="" disabled selected>請選擇次數</option>
                             <option>無</option>
                             <option>有，1 次</option>
@@ -116,32 +119,28 @@
                                 </tr>
                             </thead>
                             <tbody class="text-sm divide-y divide-slate-800/50">
-                                <!-- Row 1 -->
-                                <tr class="hover:bg-slate-800/20 transition-colors">
+                                <tr>
                                     <td class="py-5 px-4">用 chest echo 看 pneumothorax</td>
-                                    <td class="text-center"><input type="radio" name="exp_pneumo" value="0" required class="w-4 h-4 accent-cyan-400"></td>
-                                    <td class="text-center"><input type="radio" name="exp_pneumo" value="1" class="w-4 h-4 accent-cyan-400"></td>
-                                    <td class="text-center"><input type="radio" name="exp_pneumo" value="2" class="w-4 h-4 accent-cyan-400"></td>
+                                    <td class="text-center"><input type="radio" name="經驗：Pneumothorax" value="從未看過" required class="w-4 h-4 accent-cyan-400"></td>
+                                    <td class="text-center"><input type="radio" name="經驗：Pneumothorax" value="在指導下操作過" class="w-4 h-4 accent-cyan-400"></td>
+                                    <td class="text-center"><input type="radio" name="經驗：Pneumothorax" value="可獨立完成" class="w-4 h-4 accent-cyan-400"></td>
                                 </tr>
-                                <!-- Row 2 -->
-                                <tr class="hover:bg-slate-800/20 transition-colors">
+                                <tr>
                                     <td class="py-5 px-4">用 chest echo 看 pleural effusion</td>
-                                    <td class="text-center"><input type="radio" name="exp_effusion" value="0" required class="w-4 h-4 accent-cyan-400"></td>
-                                    <td class="text-center"><input type="radio" name="exp_effusion" value="1" class="w-4 h-4 accent-cyan-400"></td>
-                                    <td class="text-center"><input type="radio" name="exp_effusion" value="2" class="w-4 h-4 accent-cyan-400"></td>
+                                    <td class="text-center"><input type="radio" name="經驗：Pleural effusion" value="從未看過" required class="w-4 h-4 accent-cyan-400"></td>
+                                    <td class="text-center"><input type="radio" name="經驗：Pleural effusion" value="在指導下操作過" class="w-4 h-4 accent-cyan-400"></td>
+                                    <td class="text-center"><input type="radio" name="經驗：Pleural effusion" value="可獨立完成" class="w-4 h-4 accent-cyan-400"></td>
                                 </tr>
-                                <!-- Row 3 -->
-                                <tr class="hover:bg-slate-800/20 transition-colors">
+                                <tr>
                                     <td class="py-5 px-4">用 chest echo 看 atelectasis, pneumonia</td>
-                                    <td class="text-center"><input type="radio" name="exp_pneumonia" value="0" required class="w-4 h-4 accent-cyan-400"></td>
-                                    <td class="text-center"><input type="radio" name="exp_pneumonia" value="1" class="w-4 h-4 accent-cyan-400"></td>
-                                    <td class="text-center"><input type="radio" name="exp_pneumonia" value="2" class="w-4 h-4 accent-cyan-400"></td>
+                                    <td class="text-center"><input type="radio" name="經驗：Atelectasis/Pneumonia" value="從未看過" required class="w-4 h-4 accent-cyan-400"></td>
+                                    <td class="text-center"><input type="radio" name="經驗：Atelectasis/Pneumonia" value="在指導下操作過" class="w-4 h-4 accent-cyan-400"></td>
+                                    <td class="text-center"><input type="radio" name="經驗：Atelectasis/Pneumonia" value="可獨立完成" class="w-4 h-4 accent-cyan-400"></td>
                                 </tr>
-                                <!-- Row 4 -->
-                                <tr class="hover:bg-slate-800/20 transition-colors">
+                                <tr>
                                     <td class="py-5 px-4">Echo guidance 執行 thoracocentesis/pigtail</td>
-                                    <td class="text-center"><input type="radio" name="exp_procedure" value="0" required class="w-4 h-4 accent-cyan-400"></td>
-                                    <td class="text-center"><input type="radio" name="exp_procedure" value="1" class="w-4 h-4 accent-cyan-400"></td>
+                                    <td class="text-center"><input type="radio" name="經驗：Thoracocentesis/Pigtail" value="從未看過" required class="w-4 h-4 accent-cyan-400"></td>
+                                    <td class="text-center"><input type="radio" name="經驗：Thoracocentesis/Pigtail" value="在指導下操作過" class="w-4 h-4 accent-cyan-400"></td>
                                     <td class="text-center text-slate-600">N/A</td>
                                 </tr>
                             </tbody>
@@ -157,54 +156,37 @@
                     <h2 class="text-xl font-bold text-white">B. 課程報名</h2>
                 </div>
 
-                <div class="bg-blue-500/5 rounded-xl p-6 mb-8 border border-blue-500/20 space-y-4">
-                    <div class="flex items-start gap-4">
-                        <span class="px-2 py-1 bg-blue-500/20 text-blue-400 rounded text-xs font-bold mt-1">大堂課</span>
-                        <div>
-                            <p class="text-white font-medium">3/9 (一) 12:00-14:00</p>
-                            <p class="text-sm text-slate-400">國際會議廳</p>
-                        </div>
-                    </div>
-                    <div class="flex items-start gap-4">
-                        <span class="px-2 py-1 bg-cyan-500/20 text-cyan-400 rounded text-xs font-bold mt-1">實作課</span>
-                        <div>
-                            <p class="text-white font-medium">3月第二、三、四週 (週三/週四)</p>
-                            <p class="text-sm text-slate-400">二樓檢查室12號門 (14:00-16:00)</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="space-y-4">
+                <div class="space-y-4 mb-6">
                     <label class="block text-sm font-medium text-slate-400">請勾選『所有』您可以的時間（複選）：</label>
-                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4" id="session-grid">
-                        <!-- JS will inject labels here if needed, or static: -->
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                        <!-- 利用同樣的 name="可參與的實作時間" 方便 GAS 收集 -->
                         <label class="relative flex items-center justify-center p-4 rounded-xl border border-slate-800 bg-slate-900/50 cursor-pointer hover:border-blue-500/50 transition-all group">
-                            <input type="checkbox" name="sessions" value="3/11" class="hidden peer">
+                            <input type="checkbox" name="可參與的實作時間" value="3/11" class="hidden peer">
                             <span class="font-medium peer-checked:text-blue-400">3/11 (三)</span>
                             <div class="absolute inset-0 border-2 border-transparent peer-checked:border-blue-500 rounded-xl pointer-events-none"></div>
                         </label>
                         <label class="relative flex items-center justify-center p-4 rounded-xl border border-slate-800 bg-slate-900/50 cursor-pointer hover:border-blue-500/50 transition-all group">
-                            <input type="checkbox" name="sessions" value="3/12" class="hidden peer">
+                            <input type="checkbox" name="可參與的實作時間" value="3/12" class="hidden peer">
                             <span class="font-medium peer-checked:text-blue-400">3/12 (四)</span>
                             <div class="absolute inset-0 border-2 border-transparent peer-checked:border-blue-500 rounded-xl pointer-events-none"></div>
                         </label>
                         <label class="relative flex items-center justify-center p-4 rounded-xl border border-slate-800 bg-slate-900/50 cursor-pointer hover:border-blue-500/50 transition-all group">
-                            <input type="checkbox" name="sessions" value="3/18" class="hidden peer">
+                            <input type="checkbox" name="可參與的實作時間" value="3/18" class="hidden peer">
                             <span class="font-medium peer-checked:text-blue-400">3/18 (三)</span>
                             <div class="absolute inset-0 border-2 border-transparent peer-checked:border-blue-500 rounded-xl pointer-events-none"></div>
                         </label>
                         <label class="relative flex items-center justify-center p-4 rounded-xl border border-slate-800 bg-slate-900/50 cursor-pointer hover:border-blue-500/50 transition-all group">
-                            <input type="checkbox" name="sessions" value="3/19" class="hidden peer">
+                            <input type="checkbox" name="可參與的實作時間" value="3/19" class="hidden peer">
                             <span class="font-medium peer-checked:text-blue-400">3/19 (四)</span>
                             <div class="absolute inset-0 border-2 border-transparent peer-checked:border-blue-500 rounded-xl pointer-events-none"></div>
                         </label>
                         <label class="relative flex items-center justify-center p-4 rounded-xl border border-slate-800 bg-slate-900/50 cursor-pointer hover:border-blue-500/50 transition-all group">
-                            <input type="checkbox" name="sessions" value="3/25" class="hidden peer">
+                            <input type="checkbox" name="可參與的實作時間" value="3/25" class="hidden peer">
                             <span class="font-medium peer-checked:text-blue-400">3/25 (三)</span>
                             <div class="absolute inset-0 border-2 border-transparent peer-checked:border-blue-500 rounded-xl pointer-events-none"></div>
                         </label>
                         <label class="relative flex items-center justify-center p-4 rounded-xl border border-slate-800 bg-slate-900/50 cursor-pointer hover:border-blue-500/50 transition-all group">
-                            <input type="checkbox" name="sessions" value="3/26" class="hidden peer">
+                            <input type="checkbox" name="可參與的實作時間" value="3/26" class="hidden peer">
                             <span class="font-medium peer-checked:text-blue-400">3/26 (四)</span>
                             <div class="absolute inset-0 border-2 border-transparent peer-checked:border-blue-500 rounded-xl pointer-events-none"></div>
                         </label>
@@ -218,48 +200,46 @@
                     <i data-lucide="trending-up" class="w-6 h-6 text-purple-400"></i>
                     <h2 class="text-xl font-bold text-white">C. 自我效能感</h2>
                 </div>
-                <p class="text-sm text-slate-400 mb-8">請評估您的信心程度（1 = 非常無信心，5 = 非常有信心）</p>
-
+                
                 <div class="space-y-6">
-                    <!-- Efficiency Questions -->
                     <div class="flex flex-col md:flex-row md:items-center justify-between p-5 bg-slate-950/50 rounded-xl border border-slate-800 gap-4">
                         <span class="text-slate-300">1. 我能正確選擇適合的探頭</span>
                         <div class="flex gap-2">
-                            <input type="radio" name="eff_1" value="1" required class="hidden custom-radio" id="eff1_1"><label for="eff1_1" class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-900 border border-slate-700 cursor-pointer hover:border-purple-500 transition-all">1</label>
-                            <input type="radio" name="eff_1" value="2" class="hidden custom-radio" id="eff1_2"><label for="eff1_2" class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-900 border border-slate-700 cursor-pointer hover:border-purple-500 transition-all">2</label>
-                            <input type="radio" name="eff_1" value="3" class="hidden custom-radio" id="eff1_3"><label for="eff1_3" class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-900 border border-slate-700 cursor-pointer hover:border-purple-500 transition-all">3</label>
-                            <input type="radio" name="eff_1" value="4" class="hidden custom-radio" id="eff1_4"><label for="eff1_4" class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-900 border border-slate-700 cursor-pointer hover:border-purple-500 transition-all">4</label>
-                            <input type="radio" name="eff_1" value="5" class="hidden custom-radio" id="eff1_5"><label for="eff1_5" class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-900 border border-slate-700 cursor-pointer hover:border-purple-500 transition-all">5</label>
+                            <input type="radio" name="效能感：選擇探頭" value="1" required class="hidden custom-radio" id="eff1_1"><label for="eff1_1" class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-900 border border-slate-700 cursor-pointer hover:border-purple-500 transition-all">1</label>
+                            <input type="radio" name="效能感：選擇探頭" value="2" class="hidden custom-radio" id="eff1_2"><label for="eff1_2" class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-900 border border-slate-700 cursor-pointer hover:border-purple-500 transition-all">2</label>
+                            <input type="radio" name="效能感：選擇探頭" value="3" class="hidden custom-radio" id="eff1_3"><label for="eff1_3" class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-900 border border-slate-700 cursor-pointer hover:border-purple-500 transition-all">3</label>
+                            <input type="radio" name="效能感：選擇探頭" value="4" class="hidden custom-radio" id="eff1_4"><label for="eff1_4" class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-900 border border-slate-700 cursor-pointer hover:border-purple-500 transition-all">4</label>
+                            <input type="radio" name="效能感：選擇探頭" value="5" class="hidden custom-radio" id="eff1_5"><label for="eff1_5" class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-900 border border-slate-700 cursor-pointer hover:border-purple-500 transition-all">5</label>
                         </div>
                     </div>
                     <div class="flex flex-col md:flex-row md:items-center justify-between p-5 bg-slate-950/50 rounded-xl border border-slate-800 gap-4">
                         <span class="text-slate-300">2. 我能辨識正常與異常影像</span>
                         <div class="flex gap-2">
-                            <input type="radio" name="eff_2" value="1" required class="hidden custom-radio" id="eff2_1"><label for="eff2_1" class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-900 border border-slate-700 cursor-pointer hover:border-purple-500 transition-all">1</label>
-                            <input type="radio" name="eff_2" value="2" class="hidden custom-radio" id="eff2_2"><label for="eff2_2" class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-900 border border-slate-700 cursor-pointer hover:border-purple-500 transition-all">2</label>
-                            <input type="radio" name="eff_2" value="3" class="hidden custom-radio" id="eff2_3"><label for="eff2_3" class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-900 border border-slate-700 cursor-pointer hover:border-purple-500 transition-all">3</label>
-                            <input type="radio" name="eff_2" value="4" class="hidden custom-radio" id="eff2_4"><label for="eff2_4" class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-900 border border-slate-700 cursor-pointer hover:border-purple-500 transition-all">4</label>
-                            <input type="radio" name="eff_2" value="5" class="hidden custom-radio" id="eff2_5"><label for="eff2_5" class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-900 border border-slate-700 cursor-pointer hover:border-purple-500 transition-all">5</label>
+                            <input type="radio" name="效能感：辨識影像" value="1" required class="hidden custom-radio" id="eff2_1"><label for="eff2_1" class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-900 border border-slate-700 cursor-pointer hover:border-purple-500 transition-all">1</label>
+                            <input type="radio" name="效能感：辨識影像" value="2" class="hidden custom-radio" id="eff2_2"><label for="eff2_2" class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-900 border border-slate-700 cursor-pointer hover:border-purple-500 transition-all">2</label>
+                            <input type="radio" name="效能感：辨識影像" value="3" class="hidden custom-radio" id="eff2_3"><label for="eff2_3" class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-900 border border-slate-700 cursor-pointer hover:border-purple-500 transition-all">3</label>
+                            <input type="radio" name="效能感：辨識影像" value="4" class="hidden custom-radio" id="eff2_4"><label for="eff2_4" class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-900 border border-slate-700 cursor-pointer hover:border-purple-500 transition-all">4</label>
+                            <input type="radio" name="效能感：辨識影像" value="5" class="hidden custom-radio" id="eff2_5"><label for="eff2_5" class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-900 border border-slate-700 cursor-pointer hover:border-purple-500 transition-all">5</label>
                         </div>
                     </div>
                     <div class="flex flex-col md:flex-row md:items-center justify-between p-5 bg-slate-950/50 rounded-xl border border-slate-800 gap-4">
-                        <span class="text-slate-300">3. 我在病房會主動考慮使用 chest echo</span>
+                        <span class="text-slate-300">3. 我會主動考慮使用 chest echo</span>
                         <div class="flex gap-2">
-                            <input type="radio" name="eff_3" value="1" required class="hidden custom-radio" id="eff3_1"><label for="eff3_1" class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-900 border border-slate-700 cursor-pointer hover:border-purple-500 transition-all">1</label>
-                            <input type="radio" name="eff_3" value="2" class="hidden custom-radio" id="eff3_2"><label for="eff3_2" class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-900 border border-slate-700 cursor-pointer hover:border-purple-500 transition-all">2</label>
-                            <input type="radio" name="eff_3" value="3" class="hidden custom-radio" id="eff3_3"><label for="eff3_3" class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-900 border border-slate-700 cursor-pointer hover:border-purple-500 transition-all">3</label>
-                            <input type="radio" name="eff_3" value="4" class="hidden custom-radio" id="eff3_4"><label for="eff3_4" class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-900 border border-slate-700 cursor-pointer hover:border-purple-500 transition-all">4</label>
-                            <input type="radio" name="eff_3" value="5" class="hidden custom-radio" id="eff3_5"><label for="eff3_5" class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-900 border border-slate-700 cursor-pointer hover:border-purple-500 transition-all">5</label>
+                            <input type="radio" name="效能感：主動臨床使用" value="1" required class="hidden custom-radio" id="eff3_1"><label for="eff3_1" class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-900 border border-slate-700 cursor-pointer hover:border-purple-500 transition-all">1</label>
+                            <input type="radio" name="效能感：主動臨床使用" value="2" class="hidden custom-radio" id="eff3_2"><label for="eff3_2" class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-900 border border-slate-700 cursor-pointer hover:border-purple-500 transition-all">2</label>
+                            <input type="radio" name="效能感：主動臨床使用" value="3" class="hidden custom-radio" id="eff3_3"><label for="eff3_3" class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-900 border border-slate-700 cursor-pointer hover:border-purple-500 transition-all">3</label>
+                            <input type="radio" name="效能感：主動臨床使用" value="4" class="hidden custom-radio" id="eff3_4"><label for="eff3_4" class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-900 border border-slate-700 cursor-pointer hover:border-purple-500 transition-all">4</label>
+                            <input type="radio" name="效能感：主動臨床使用" value="5" class="hidden custom-radio" id="eff3_5"><label for="eff3_5" class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-900 border border-slate-700 cursor-pointer hover:border-purple-500 transition-all">5</label>
                         </div>
                     </div>
                     <div class="flex flex-col md:flex-row md:items-center justify-between p-5 bg-slate-950/50 rounded-xl border border-slate-800 gap-4">
-                        <span class="text-slate-300">4. 我能將超音波結果整合進臨床決策</span>
+                        <span class="text-slate-300">4. 我能將結果整合進臨床決策</span>
                         <div class="flex gap-2">
-                            <input type="radio" name="eff_4" value="1" required class="hidden custom-radio" id="eff4_1"><label for="eff4_1" class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-900 border border-slate-700 cursor-pointer hover:border-purple-500 transition-all">1</label>
-                            <input type="radio" name="eff_4" value="2" class="hidden custom-radio" id="eff4_2"><label for="eff4_2" class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-900 border border-slate-700 cursor-pointer hover:border-purple-500 transition-all">2</label>
-                            <input type="radio" name="eff_4" value="3" class="hidden custom-radio" id="eff4_3"><label for="eff4_3" class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-900 border border-slate-700 cursor-pointer hover:border-purple-500 transition-all">3</label>
-                            <input type="radio" name="eff_4" value="4" class="hidden custom-radio" id="eff4_4"><label for="eff4_4" class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-900 border border-slate-700 cursor-pointer hover:border-purple-500 transition-all">4</label>
-                            <input type="radio" name="eff_4" value="5" class="hidden custom-radio" id="eff4_5"><label for="eff4_5" class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-900 border border-slate-700 cursor-pointer hover:border-purple-500 transition-all">5</label>
+                            <input type="radio" name="效能感：整合臨床決策" value="1" required class="hidden custom-radio" id="eff4_1"><label for="eff4_1" class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-900 border border-slate-700 cursor-pointer hover:border-purple-500 transition-all">1</label>
+                            <input type="radio" name="效能感：整合臨床決策" value="2" class="hidden custom-radio" id="eff4_2"><label for="eff4_2" class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-900 border border-slate-700 cursor-pointer hover:border-purple-500 transition-all">2</label>
+                            <input type="radio" name="效能感：整合臨床決策" value="3" class="hidden custom-radio" id="eff4_3"><label for="eff4_3" class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-900 border border-slate-700 cursor-pointer hover:border-purple-500 transition-all">3</label>
+                            <input type="radio" name="效能感：整合臨床決策" value="4" class="hidden custom-radio" id="eff4_4"><label for="eff4_4" class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-900 border border-slate-700 cursor-pointer hover:border-purple-500 transition-all">4</label>
+                            <input type="radio" name="效能感：整合臨床決策" value="5" class="hidden custom-radio" id="eff4_5"><label for="eff4_5" class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-900 border border-slate-700 cursor-pointer hover:border-purple-500 transition-all">5</label>
                         </div>
                     </div>
                 </div>
@@ -277,95 +257,84 @@
                         <label class="block text-sm font-medium text-slate-400">1. 您參加本課程的主要動機是？（可複選）</label>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <label class="flex items-center gap-3 p-3 rounded-xl border border-slate-800 bg-slate-950/50 cursor-pointer transition-all">
-                                <input type="checkbox" name="motivation" value="提升臨床判斷能力" class="w-5 h-5 accent-emerald-500">
+                                <input type="checkbox" name="學習動機" value="提升臨床判斷能力" class="w-5 h-5 accent-emerald-500">
                                 <span class="text-sm">提升臨床判斷能力</span>
                             </label>
                             <label class="flex items-center gap-3 p-3 rounded-xl border border-slate-800 bg-slate-950/50 cursor-pointer transition-all">
-                                <input type="checkbox" name="motivation" value="為值班/急救做準備" class="w-5 h-5 accent-emerald-500">
+                                <input type="checkbox" name="學習動機" value="為值班/急救做準備" class="w-5 h-5 accent-emerald-500">
                                 <span class="text-sm">為值班/急救做準備</span>
                             </label>
                             <label class="flex items-center gap-3 p-3 rounded-xl border border-slate-800 bg-slate-950/50 cursor-pointer transition-all">
-                                <input type="checkbox" name="motivation" value="應付考試或評核" class="w-5 h-5 accent-emerald-500">
+                                <input type="checkbox" name="學習動機" value="應付考試或評核" class="w-5 h-5 accent-emerald-500">
                                 <span class="text-sm">應付考試或評核</span>
                             </label>
                             <label class="flex items-center gap-3 p-3 rounded-xl border border-slate-800 bg-slate-950/50 cursor-pointer transition-all">
-                                <input type="checkbox" name="motivation" value="純粹興趣" class="w-5 h-5 accent-emerald-500">
+                                <input type="checkbox" name="學習動機" value="純粹興趣" class="w-5 h-5 accent-emerald-500">
                                 <span class="text-sm">純粹興趣</span>
                             </label>
-                            <div class="col-span-1 sm:col-span-2 flex items-center gap-3 p-3 rounded-xl border border-slate-800 bg-slate-950/50">
-                                <label class="flex items-center gap-3 shrink-0 cursor-pointer">
-                                    <input type="checkbox" id="m_other" name="motivation" value="其他" class="w-5 h-5 accent-emerald-500">
-                                    <span class="text-sm">其他：</span>
-                                </label>
-                                <input type="text" id="m_other_text" placeholder="請補充..." class="flex-grow bg-transparent border-b border-slate-700 outline-none text-sm text-white focus:border-emerald-500 transition-all">
-                            </div>
                         </div>
                     </div>
 
                     <div class="space-y-4">
-                        <label class="block text-sm font-medium text-slate-400">2. 您最希望從本課程學到的是？（開放題）</label>
-                        <textarea name="expectation" rows="4" class="w-full bg-slate-950 border border-slate-800 focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 rounded-xl p-4 text-white outline-none resize-none transition-all" placeholder="請輸入您的期待..."></textarea>
+                        <label class="block text-sm font-medium text-slate-400">2. 您最希望從本課程學到的是？</label>
+                        <textarea name="學習期待" rows="4" class="w-full bg-slate-950 border border-slate-800 focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 rounded-xl p-4 text-white outline-none resize-none transition-all" placeholder="請輸入您的期待..."></textarea>
                     </div>
                 </div>
             </section>
 
             <!-- Submit Button -->
-            <button type="submit" class="w-full py-5 px-8 rounded-2xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-lg shadow-[0_0_25px_rgba(8,145,178,0.5)] hover:shadow-[0_0_40px_rgba(6,182,212,0.7)] transition-all flex items-center justify-center gap-3 active:scale-[0.98]">
+            <button type="submit" id="submitBtn" class="w-full py-5 px-8 rounded-2xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-lg shadow-[0_0_25px_rgba(8,145,178,0.5)] hover:shadow-[0_0_40px_rgba(6,182,212,0.7)] transition-all flex items-center justify-center gap-3 active:scale-[0.98]">
                 <i data-lucide="send" class="w-5 h-5"></i>
-                送出報名與問卷
+                <span>送出報名與問卷</span>
             </button>
         </form>
 
-        <!-- Success Message (Hidden) -->
+        <!-- Success Message -->
         <div id="success-msg" class="hidden bg-slate-900 border border-cyan-500/30 rounded-3xl p-12 text-center space-y-6 shadow-[0_0_50px_rgba(34,211,238,0.15)] mt-12">
             <i data-lucide="check-circle-2" class="w-20 h-20 text-cyan-400 mx-auto"></i>
             <h2 class="text-3xl font-bold text-white">報名成功</h2>
-            <p class="text-slate-400 max-w-md mx-auto">您的報名資訊已成功傳送！期待在 3/9 的 Chest Echo 課程中見到您。</p>
-            <button onclick="window.location.reload()" class="px-8 py-3 bg-slate-800 hover:bg-slate-700 text-cyan-400 rounded-xl border border-cyan-500/50 transition-all">
-                返回填寫
-            </button>
+            <p class="text-slate-400 max-w-md mx-auto">您的報名資訊已成功傳送！期待在課程中見到您。</p>
+            <button onclick="window.location.reload()" class="px-8 py-3 bg-slate-800 hover:bg-slate-700 text-cyan-400 rounded-xl border border-cyan-500/50 transition-all">返回填寫</button>
         </div>
     </div>
 
     <script>
-        // Initialize Icons
         lucide.createIcons();
 
-        // Handle Form Submission
-        document.getElementById('echoForm').addEventListener('submit', function(e) {
+        // ⚠️ 重要：請將下方的 URL 替換為您在 Apps Script 中「部署為網頁應用程式」後取得的網址
+        const scriptURL = 'https://script.google.com/macros/s/AKfycbw-GYPBBKj0Focm6iKISIGB_AA-e77yL3kgmzX-J9tNscjBLXQMiVFvdUpFN7rGW8ORhA/exec';
+        const form = document.getElementById('echoForm');
+        const submitBtn = document.getElementById('submitBtn');
+
+        form.addEventListener('submit', e => {
             e.preventDefault();
             
-            // Collect Form Data (You would typically send this to Google Sheets via Fetch API)
-            const formData = new FormData(this);
-            const data = {};
-            formData.forEach((value, key) => {
-                if (!data[key]) {
-                    data[key] = value;
-                } else {
-                    if (!Array.isArray(data[key])) {
-                        data[key] = [data[key]];
-                    }
-                    data[key].push(value);
-                }
+            // 防止重複點擊
+            submitBtn.disabled = true;
+            submitBtn.querySelector('span').innerText = '傳送中...';
+            submitBtn.querySelector('i').outerHTML = '<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i>';
+            lucide.createIcons();
+
+            // 使用 Fetch API 傳送資料
+            fetch(scriptURL, { 
+                method: 'POST', 
+                body: new FormData(form)
+            })
+            .then(response => {
+                console.log('Success!', response);
+                form.classList.add('hidden');
+                document.getElementById('page-header').classList.add('opacity-50');
+                document.getElementById('success-msg').classList.remove('hidden');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            })
+            .catch(error => {
+                console.error('Error!', error.message);
+                alert('傳送失敗，請確認腳本網址是否正確，或檢查網路連線。');
+                submitBtn.disabled = false;
+                submitBtn.querySelector('span').innerText = '重試送出';
+                submitBtn.querySelector('i').outerHTML = '<i data-lucide="send" class="w-5 h-5"></i>';
+                lucide.createIcons();
             });
-
-            console.log('Submitted Data:', data);
-
-            // UI Feedback
-            this.classList.add('hidden');
-            document.querySelector('header').classList.add('opacity-50');
-            document.getElementById('success-msg').classList.remove('hidden');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        });
-
-        // Other Checkbox logic
-        const otherText = document.getElementById('m_other_text');
-        const otherCheck = document.getElementById('m_other');
-        
-        otherText.addEventListener('input', () => {
-            if(otherText.value.length > 0) {
-                otherCheck.checked = true;
-            }
         });
     </script>
 </body>
